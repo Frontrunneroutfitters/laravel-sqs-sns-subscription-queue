@@ -62,17 +62,18 @@ class SqsSnsJob extends SqsJob
             // the service container, passing in the subject and the payload of the
             // notification.
 
-            $command = $this->makeCommand($commandName, $body);
+            $command = $this->makeCommand($commandName, $body, $job['MessageId']);
 
             // The instance for the job will then be serialized and the body of
             // the job is reconstructed.
-
-            $job['Body'] = json_encode([
-                'uuid' => $body['MessageId'],
-                'displayName' => $commandName,
-                'job' => CallQueuedHandler::class . '@call',
-                'data' => compact('commandName', 'command'),
-            ]);
+            $job['Body'] = json_encode(
+                [
+                    'uuid' => $job['MessageId'],
+                    'displayName' => $commandName,
+                    'job' => CallQueuedHandler::class . '@call',
+                    'data' => compact('commandName', 'command'),
+                ]
+            );
         }
 
         return $job;
@@ -82,23 +83,23 @@ class SqsSnsJob extends SqsJob
      * Make the serialized command.
      *
      * @param string $commandName
-     * @param array  $body
+     * @param array $body
      * @return string
      */
-    protected function makeCommand($commandName, $body)
+    protected function makeCommand($commandName, $body, $messageId)
     {
-        $payload = json_decode($body['Message'], true);
+        // $payload = json_decode($body['Message'], true);
 
         $data = [
-            'subject' => (isset($body['Subject'])) ? $body['Subject'] : '',
-            'payload' => $payload
+            'subject' => 'SysPro',
+            'payload' => $body,
+            'messageId' => $messageId,
         ];
 
         $instance = $this->container->make($commandName, $data);
 
         return serialize($instance);
     }
-
 
 
     /**
